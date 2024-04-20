@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Horoscope;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class HoroscopeController extends Controller {
     public function importHoroscopes() {
         $signController = new SignController();
         $timeController = new TimeController();
+        $langController = new LangController();
 
         // Get all signs and times
         $arraySigns = $signController->index();
@@ -16,6 +18,9 @@ class HoroscopeController extends Controller {
 
         // Get current date
         $currentDate = date('d/m/Y');
+
+        // Get english ISO code 'id'
+        $englishIsoCode = $langController->get('english')->iso_code;
 
         foreach ($arraySigns as $sign) {
             foreach ($arrayTimes as $time) {
@@ -27,6 +32,7 @@ class HoroscopeController extends Controller {
                             ['date', '=', $currentDate], 
                             ['sign_id', '=', $sign->id], 
                             ['time_id', '=', $time->id], 
+                            ['lang_iso_code', '=', $englishIsoCode], 
                         ])->exists();
                         break;
 
@@ -39,6 +45,7 @@ class HoroscopeController extends Controller {
                             ['date', '<=', $endWeekDate], 
                             ['sign_id', '=', $sign->id], 
                             ['time_id', '=', $time->id], 
+                            ['lang_iso_code', '=', $englishIsoCode], 
                         ])->exists();
                         break;
 
@@ -50,6 +57,7 @@ class HoroscopeController extends Controller {
                             ['date', 'LIKE', '%/' . $currentMonth . '/%'], 
                             ['sign_id', '=', $sign->id], 
                             ['time_id', '=', $time->id], 
+                            ['lang_iso_code', '=', $englishIsoCode], 
                         ])->exists();
                         break;
                 }
@@ -64,9 +72,84 @@ class HoroscopeController extends Controller {
                         'horoscope' => $horoscope, 
                         'sign_id' => $sign->id, 
                         'time_id' => $time->id, 
+                        'lang_iso_code' => $englishIsoCode,
+                        'referenced_horoscope' => 0,
                     ]);
                 }
             }
+        }
+    }
+
+    public function addPendingTranslations() {
+        $langController = new LangController();
+        
+        // Get english iso code
+        $englishIsoCode = $langController->get('english')->iso_code;
+
+        // Get all languages
+        $arrayLanguages = $langController->index();
+
+        // Get all english horoscopes 
+        $arrayEnglishHoroscopes = Horoscope::where([
+            ['lang_iso_code', '=', $englishIsoCode]
+        ])->get();
+
+        // Add pending horoscope language translation
+        foreach ($arrayEnglishHoroscopes as $horoscope) {
+            foreach ($arrayLanguages as $language) {
+                if ($language->iso_code != $englishIsoCode) {
+                    $existsHoroscopeTranslation = Horoscope::where([
+                        ['lang_iso_code', '=', $language->iso_code], 
+                        ['referenced_horoscope', '=', $horoscope->id],
+                    ])->exists();
+
+                    if (!$existsHoroscopeTranslation) {
+                        Horoscope::create([
+                            'date' => $horoscope->date, 
+                            'horoscope' => null,
+                            'sign_id' => $horoscope->sign_id,
+                            'time_id' => $horoscope->time_id, 
+                            'lang_iso_code' => $language->iso_code,
+                            'referenced_horoscope' => $horoscope->id, 
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    public function translate() {
+        $langController = new LangController();
+
+        // Get translator
+        $translator = new GoogleTranslate();
+
+        // Get english iso code
+        $englishIsoCode = $langController->get('english');
+
+        // Get first 15 pending translations
+        $arrayPendingHoroscopeTranslations = Horoscope::whereNull('horoscope')
+        ->take(15)
+        ->get();
+
+        // Translate and update horoscopes 
+        foreach ($arrayPendingHoroscopeTranslations as $horoscope) {
+            // Get referenced horoscope
+            $referencedHoroscope = Horoscope::where([
+                ['id', '=', $horoscope->referenced_horoscope]
+            ])
+            ->first();
+
+            // Translate the text
+            $translatedHoroscope = $translator->translate($referencedHoroscope->horoscope, 'en', $horoscope->lang_iso_code);
+            
+            // Update horoscope info
+            Horoscope::where([
+                ['id', $horoscope->id]
+            ])
+            ->update([
+                'horoscope' => $translatedHoroscope, 
+            ]);
         }
     }
 }

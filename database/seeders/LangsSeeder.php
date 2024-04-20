@@ -13,9 +13,9 @@ class LangsSeeder extends Seeder
      */
     public function run(): void {
         $arrayIsoCodes = [
-            'es' => 'Castellano',
-            'ca' => 'Catalán',
-            'en' => 'Inglés',
+            'es' => 'spanish',
+            'ca' => 'catalan',
+            'en' => 'english',
         ];
 
         foreach ($arrayIsoCodes as $isoCode => $langName) {

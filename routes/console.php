@@ -8,4 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-Schedule::command('app:import-horoscopes-command')->everySecond();
+Schedule::command('app:import-horoscopes-command')->everyFiveSeconds();
+Schedule::command('app:add-pending-horoscope-translations-command')->everyMinute();
+Schedule::command('app:translate-horoscopes-command')->everyTwoMinutes();
