@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SignsSeeder::class,
             TimesSeeder::class, 
+            LangsSeeder::class, 
         ]);
     }
 }
