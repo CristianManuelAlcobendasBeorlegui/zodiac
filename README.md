@@ -3,7 +3,7 @@
 ## Descripción
 Proyecto Laravel que importa los horóscopos de la API **[https://www.astrology-zodiac-signs.com](https://www.astrology-zodiac-signs.com)** y cada 5 minutos se traducen 15 predicciones.
 
-Como traducto se utiliza GoogleTranslate.
+Como traductor se utiliza GoogleTranslate.
 
 Los horóscopos se traducen en tres idiomas:
 - Castellano (es)
