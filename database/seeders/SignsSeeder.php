@@ -12,7 +12,7 @@ class SignsSeeder extends Seeder
      */
     public function run(): void
     {
-        $arraySigns = ['aquarius', 'pisces', 'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'carpicorn'];
+        $arraySigns = ['aquarius', 'pisces', 'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn'];
         
         foreach ($arraySigns as $sign) {
             Sign::create([
