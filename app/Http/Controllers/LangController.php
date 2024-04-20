@@ -12,9 +12,15 @@ class LangController extends Controller
         return Lang::all();
     }
 
-    public function get(string $langName) {
+    public function getByName(string $name) {
         return Lang::where([
-            ['name', '=', $langName]
-        ])->first();
+            ['name', '=', $name]
+        ]);
+    }
+
+    public function existsIsoCode(string $isoCode): bool {
+        return Lang::where([
+            ['iso_code', '=', $isoCode]
+        ])->exists();
     }
 }

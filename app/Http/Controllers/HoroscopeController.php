@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Horoscope;
+use Illuminate\Http\Request;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class HoroscopeController extends Controller {
@@ -20,7 +21,7 @@ class HoroscopeController extends Controller {
         $currentDate = date('d/m/Y');
 
         // Get english ISO code 'id'
-        $englishIsoCode = $langController->get('english')->iso_code;
+        $englishIsoCode = $langController->getByName('english')->iso_code;
 
         foreach ($arraySigns as $sign) {
             foreach ($arrayTimes as $time) {
@@ -84,7 +85,7 @@ class HoroscopeController extends Controller {
         $langController = new LangController();
         
         // Get english iso code
-        $englishIsoCode = $langController->get('english')->iso_code;
+        $englishIsoCode = $langController->getByName('english')->iso_code;
 
         // Get all languages
         $arrayLanguages = $langController->index();
@@ -125,7 +126,7 @@ class HoroscopeController extends Controller {
         $translator = new GoogleTranslate();
 
         // Get english iso code
-        $englishIsoCode = $langController->get('english');
+        $englishIsoCode = $langController->getByName('english');
 
         // Get first 15 pending translations
         $arrayPendingHoroscopeTranslations = Horoscope::whereNull('horoscope')
@@ -151,5 +152,61 @@ class HoroscopeController extends Controller {
                 'horoscope' => $translatedHoroscope, 
             ]);
         }
+    }
+
+    public function getHoroscope(Request $request) {
+        $response = [
+            'code' => 400,
+            'response' => 'Undefined',
+        ];
+        $langIsoCode = (isset($request->lang_iso_code)) ? strtolower($request->lang_iso_code) : null;
+        $time = (isset($request->time)) ? $request->time : null;
+        $sign = (isset($request->sign)) ? $request->sign : null;
+        $langController = new LangController();
+        $signController = new SignController();
+        $timeController = new TimeController();
+        
+        // Check if given lang iso code exists
+        if ($langIsoCode != null && $langController->existsIsoCode($langIsoCode)) {
+            // Check if exists given time
+            if ($time != null && $timeController->existsTime($time)) {
+                // Check if exists given sign
+                if ($sign != null && $signController->existsSign($sign)) {
+                    // Get related data to sign and time
+                    $timeData = $timeController->getByName($time)->first();
+                    $signData = $signController->getByName($sign)->first();
+                    
+                    // Get current horoscope data
+                    $horoscope = Horoscope::where([
+                        ['lang_iso_code', '=', $langIsoCode],
+                        ['time_id', '=', $timeData->id], 
+                        ['sign_id', '=', $signData->id], 
+                    ])->first();
+
+                    // Check if horoscope is null
+                    if ($horoscope->horoscope == null) {
+                        // Get referenced horoscope text
+                        $referencedHoroscope = Horoscope::where([
+                            ['id', '=', $horoscope->referenced_horoscope], 
+                        ])->first();
+
+                        // Set to horoscope the referenced text
+                        $horoscope->horoscope = $referencedHoroscope->horoscope;
+                    }
+
+                    // Generate response 
+                    $response['code'] = 200;
+                    $response['response'] = $horoscope->horoscope;
+                } else {
+                    $response['response'] = 'ERROR: Given sign (' . $sign . ') not valid.';
+                }
+            } else {
+                $response['response'] = 'ERROR: Given time (' . $time . ') not valid.';
+            }
+        } else {
+            $response['response'] = 'ERROR: Given language code (' . $langIsoCode . ') is not valid.';
+        }
+
+        return $response;
     }
 }

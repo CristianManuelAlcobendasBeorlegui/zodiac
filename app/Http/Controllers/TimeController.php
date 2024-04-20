@@ -11,4 +11,16 @@ class TimeController extends Controller
     public function index() {
         return Time::all();
     }
+
+    public function existsTime(string $name): bool {
+        return Time::where([
+            ['name', '=', $name]
+        ])->exists();
+    }
+
+    public function getByName(string $name) {
+        return Time::where([
+            ['name', '=', $name]
+        ]);
+    }
 }

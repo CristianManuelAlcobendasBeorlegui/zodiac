@@ -11,4 +11,16 @@ class SignController extends Controller
     public function index() {
         return Sign::all();
     }
+
+    public function existsSign(string $name): bool {
+        return Sign::where([
+            ['name', '=', $name]
+        ])->exists();
+    }
+
+    public function getByName(string $name) {
+        return Sign::where([
+            ['name', '=', $name]
+        ]);
+    }
 }
